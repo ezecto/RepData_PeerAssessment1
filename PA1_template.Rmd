@@ -8,18 +8,107 @@ output:
 
 ## Loading and preprocessing the data
 
+```{r}
+echo = TRUE
+setwd("D:/Desktop")
+activity <- NULL
+activity <- read.csv("activity.csv", header = T, sep = ",")
+
+echo = TRUE
+df_summary <- NULL
+steps2 <- NULL
+steps <- NULL
+mnint <- NULL
+activity2 <- NULL
+mean_steps2 <- NULL
+activity2_wend <- NULL
+activity2_wday <- NULL
+mean_activity2_wday <- NULL
+mean_activity2_wend <- NULL
+```
+
 
 
 ## What is mean total number of steps taken per day?
 
+```{r}
+echo = TRUE
+steps <- tapply(activity$steps, activity$date, sum, na.rm=T)
+hist(steps, xlab = "Total steps per day", main = "histogram of steps per day")
+mean_steps <- round(mean(steps))
+print(c("The mean is",mean_steps))
+med_steps <- round(median(steps))
+print(c("The median is",med_steps))
+
+```
 
 
 ## What is the average daily activity pattern?
 
+```{r}
+echo = TRUE
+mnint <- tapply(activity$steps, activity$interval, mean, na.rm=T)
+plot(mnint ~ unique(activity$interval), type="l", xlab = "5 min interval")
+
+echo = TRUE
+mnint[which.max(mnint)]
+```
 
 
 ## Imputing missing values
 
+```{r}
+echo = TRUE
+table(is.na(activity) == TRUE)
+activity2 <- activity 
+for (i in 1:nrow(activity)){
+    if(is.na(activity$steps[i])){
+        activity2$steps[i]<- mnint[[as.character(activity[i, "interval"])]]
+    }
+}
+echo = TRUE
+steps2 <- tapply(activity2$steps, activity2$date, sum, na.rm=T)
+hist(steps2, xlab = "Total steps per day", main = "histogram of steps per day")
+mean_steps2 <- round(mean(steps2))
+median_steps2 <- round(median(steps2))
+
+echo = TRUE
+print(c("The mean is",mean_steps2))
+print(c("The median is",median_steps2))
+```
+
+
+
+
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+
+```{r}
+echo = TRUE
+activity2$wday <- c("wday")
+activity2[weekdays(as.Date(activity2[, 2])) %in% c("Saturday", "Sunday", "samedi", "dimanche", "saturday", "sunday", "Samedi", "Dimanche"), ][4] <- c("wend")
+table(activity2$wday == "wend")
+
+activity2$wday <- factor(activity2$wday)
+
+echo = TRUE
+activity2_wend <- subset(activity2, activity2$wday == "wend")
+activity2_wday <- subset(activity2, activity2$wday == "wday")
+
+mean_activity2_wday <- tapply(activity2_wday$steps, activity2_wday$interval, mean)
+mean_activity2_wend <- tapply(activity2_wend$steps, activity2_wend$interval, mean)
+
+echo = TRUE
+library(lattice)
+df_wday <- NULL
+df_wend <- NULL
+df_final <- NULL
+df_wday <- data.frame(interval = unique(activity2_wday$interval), avg = as.numeric(mean_activity2_wday), day = rep("wday", length(mean_activity2_wday)))
+df_wend <- data.frame(interval = unique(activity2_wend$interval), avg = as.numeric(mean_activity2_wend), day = rep("wend", length(mean_activity2_wend)))
+df_final <- rbind(df_wday, df_wend)
+
+xyplot(avg ~ interval | day, data = df_final, layout = c(1, 2), 
+       type = "l", ylab = "Number of steps")
+```
